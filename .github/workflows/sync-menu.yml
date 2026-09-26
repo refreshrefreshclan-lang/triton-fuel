@@ -5,11 +5,17 @@ name: Sync UCSD menus
 
 on:
   schedule:
-    # Times are in UTC. These are 6:00 AM, 10:00 AM and 3:00 PM Pacific while daylight time is on
-    # (one hour earlier in winter). GitHub can start scheduled runs a few minutes late.
-    - cron: "0 13 * * *"
+    # Times are in UTC: about 12:30 AM, 5:30, 6:30, 8, 10 AM, 12, 3 and 6 PM Pacific while daylight time is on
+    # (one hour earlier in winter). GitHub sometimes skips or delays a scheduled run, so there are extra
+    # runs as backups. A run that finds the same menu changes nothing.
+    - cron: "30 7 * * *"
+    - cron: "30 12 * * *"
+    - cron: "30 13 * * *"
+    - cron: "0 15 * * *"
     - cron: "0 17 * * *"
+    - cron: "0 19 * * *"
     - cron: "0 22 * * *"
+    - cron: "0 1 * * *"
   workflow_dispatch:        # adds a "Run workflow" button so you can start it by hand
 
 permissions:
