@@ -1,0 +1,4 @@
+output/
+debug/
+.nutrition_cache.json
+__pycache__/
