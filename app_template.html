@@ -163,7 +163,6 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
 .status-dot.warn{background:var(--fat);box-shadow:0 0 0 4px color-mix(in srgb,var(--fat) 20%,transparent)}
 .status-txt{display:flex;flex-direction:column;gap:1px;min-width:0;font-size:13px;color:var(--ink-2)}
 .status-txt b{color:var(--ink);font-size:14px;font-weight:650}
-.file-btn{margin-left:auto;box-shadow:none;background:var(--fill);font-size:13px;padding:7px 12px;cursor:pointer}
 .chips-scroll{overflow-x:auto;margin-inline:-16px;padding-inline:16px;scrollbar-width:none}
 .chips-scroll::-webkit-scrollbar{display:none}
 .chips{display:flex;gap:8px;width:max-content;padding-block:2px}
@@ -327,8 +326,6 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
       <div class="card data-status" id="data-status">
         <span class="status-dot" id="status-dot"></span>
         <div class="status-txt"><b id="status-title"></b><span id="status-sub"></span></div>
-        <label class="pill-btn file-btn" for="menu-file">Load menu file</label>
-        <input id="menu-file" type="file" accept=".json,application/json" hidden>
       </div>
       <div class="section">
         <div class="section-h"><h2>Dining halls</h2><span class="aside" id="open-count"></span></div>
@@ -791,7 +788,7 @@ function renderStatus(){
   const n = MENU.halls.reduce((a,h)=>a+h.items.length,0);
   if(MENU.sample){
     dot.className='status-dot warn'; t.textContent='Sample menu';
-    s.textContent='Calories are real; protein, carbs and fat are placeholders. Load a synced menu file.';
+    s.textContent='Connect to the internet to download today’s menu.';
   } else if(MENU.date && MENU.date!==todayISO()){
     dot.className='status-dot warn'; t.textContent=`Menu from ${shortDate(MENU.date)}`;
     s.textContent = menuCheck.ok===false ? 'You’re offline, so this is the last saved menu.' : 'Today’s menu hasn’t been published yet.';
@@ -800,14 +797,24 @@ function renderStatus(){
     const when = MENU.generated ? new Date(MENU.generated).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : '';
     s.textContent=`Today’s menus${when?' · updated '+when:''} · ${n.toLocaleString('en-US')} items${menuCheck.ok===false?' · offline':''}`;
   }
-  document.querySelector('.file-btn').hidden = IS_NATIVE;
 }
+// All UCSD dining halls. A hall with no menu for the day (for example Bistro on weekends) still shows, marked closed.
+const ALL_HALLS = ['64 Degrees','Bistro','Canyon Vista','Club Med','Foodworx','OceanView','Pines','Sixth College','Ventanas'];
 function renderHallList(){
+  const listed = MENU.halls.map(h=>h.name.toLowerCase());
+  const missing = MENU.sample ? [] : ALL_HALLS.filter(n=>!listed.includes(n.toLowerCase()));
+  const today = MENU.date===todayISO();
   const rows = MENU.halls.map((h,i)=>({h,i,st:openState(h.hours),v:hallVenues(h).length}))
+    .concat(missing.map(n=>({h:{name:n}, i:null, st:{k:'closed', label: today?'Closed today':'No menu yet', rank:4}, v:0})))
     .sort((a,b)=>((a.st?a.st.rank:2.5)-(b.st?b.st.rank:2.5)) || a.h.name.localeCompare(b.h.name));
   const open = rows.filter(r=>r.st&&r.st.k==='open').length;
   document.getElementById('open-count').textContent = rows.some(r=>r.st) ? `${open} open now` : `${rows.length} halls`;
-  document.getElementById('hall-list').innerHTML = rows.map(({h,i,st,v})=>`
+  document.getElementById('hall-list').innerHTML = rows.map(({h,i,st,v},k)=> i==null ? `
+    <div class="hall-row dim">
+      <span class="logo" style="background:${HALL_COLORS[(ALL_HALLS.indexOf(h.name)+9)%HALL_COLORS.length]}">${esc(initials(h.name))}</span>
+      <span><div class="t">${esc(h.name)}</div><div class="s">${today?'No menu today':'Waiting for today’s menu'}</div></span>
+      ${pill(st)}<span></span>
+    </div>` : `
     <button class="hall-row${st&&st.k!=='open'?' dim':''}" type="button" data-h="${i}">
       <span class="logo" style="background:${HALL_COLORS[i%HALL_COLORS.length]}">${esc(initials(h.name))}</span>
       <span><div class="t">${esc(h.name)}</div>
@@ -1024,22 +1031,6 @@ function goalsSheet(){
     };
   });
 }
-
-/* ---------- Loading a synced menu file ---------- */
-document.getElementById('menu-file').addEventListener('change', e=>{
-  const f = e.target.files && e.target.files[0]; e.target.value='';
-  if(!f) return;
-  const rd = new FileReader();
-  rd.onload = ()=>{
-    let m=null; try{ m=JSON.parse(rd.result); }catch(err){}
-    if(!validMenu(expandMenu(m))){ toast('That file isn’t a menu. Pick output/menu.json from the sync folder.'); return; }
-    try{ localStorage.setItem(MENU_KEY, JSON.stringify(m)); }catch(err){}
-    MENU = useMenuCalories(expandMenu(m)); hallIdx = null; venue = null; menuPeriod = null; renderMenu();
-    const n = MENU.halls.reduce((a,h)=>a+h.items.length,0);
-    toast(`Loaded ${shortDate(m.date)||'menu'} · ${n} items`);
-  };
-  rd.readAsText(f);
-});
 
 /* ---------- Week tab: history bar chart ---------- */
 const METRICS = [
