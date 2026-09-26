@@ -1,0 +1,54 @@
+# Triton Fuel: refresh UCSD dining menus automatically.
+# GitHub reads this file and runs the steps below on its own computers, on the schedule set here.
+
+name: Sync UCSD menus
+
+on:
+  schedule:
+    # Times are in UTC. These are 6:00 AM, 10:00 AM and 3:00 PM Pacific while daylight time is on
+    # (one hour earlier in winter). GitHub can start scheduled runs a few minutes late.
+    - cron: "0 13 * * *"
+    - cron: "0 17 * * *"
+    - cron: "0 22 * * *"
+  workflow_dispatch:        # adds a "Run workflow" button so you can start it by hand
+
+permissions:
+  contents: write           # lets the run save the new menu back into this repository
+
+concurrency:
+  group: menu-sync          # never run two syncs at the same time
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TZ: America/Los_Angeles   # so "today" and the update time are in San Diego time
+
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the script's helpers
+        run: pip install -r requirements.txt
+
+      - name: Read today's menus and nutrition facts
+        run: python sync_menu.py --publish docs
+
+      - name: Save the new menu to the repository
+        run: |
+          git config user.name "menu-sync-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs
+          if git diff --cached --quiet; then
+            echo "Menu unchanged since the last run; nothing to save."
+          else
+            git commit -m "Menu update $(date +'%a %b %-d, %-I:%M %p')"
+            git push
+          fi
