@@ -1,5 +1,7 @@
 # Builds an installable Android test app (APK) from the latest published app.
 # Run it from the Actions tab ("Build Android app" > Run workflow); the APK appears under the run's Artifacts.
+# Once the four ANDROID_* secrets are added (Settings > Secrets and variables > Actions), it also builds
+# the signed bundle (AAB) that you upload to Google Play.
 
 name: Build Android app
 
@@ -13,6 +15,8 @@ jobs:
   android:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    env:
+      KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
     defaults:
       run:
         working-directory: mobile
@@ -46,15 +50,46 @@ jobs:
           npx capacitor-assets generate --android
           npx cap sync android
 
+      - name: Set the version number
+        working-directory: mobile/android
+        run: |
+          # Google Play needs a higher version code for every upload; the run number always goes up.
+          sed -i -E "s/versionCode [0-9]+/versionCode ${{ github.run_number }}/; s/versionName \"[^\"]*\"/versionName \"1.0.${{ github.run_number }}\"/" app/build.gradle
+          grep -E "versionCode|versionName|targetSdk" app/build.gradle variables.gradle || true
+
       - name: Build the APK
         working-directory: mobile/android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
+      - name: Build the signed Play Store bundle
+        if: env.KEYSTORE_BASE64 != ''
+        working-directory: mobile/android
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          ./gradlew bundleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/upload.jks" \
+            -Pandroid.injected.signing.store.password="$KS_PASS" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASS"
+          rm -f "$RUNNER_TEMP/upload.jks"
+
       - name: Save the APK
         uses: actions/upload-artifact@v4
         with:
           name: triton-fuel-android
           path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Save the Play Store bundle
+        if: env.KEYSTORE_BASE64 != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: triton-fuel-play-bundle
+          path: mobile/android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
