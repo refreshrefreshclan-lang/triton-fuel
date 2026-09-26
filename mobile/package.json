@@ -1,0 +1,23 @@
+{
+  "name": "triton-fuel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Triton Fuel: nutrition tracker for UCSD dining halls (Capacitor app shell)",
+  "scripts": {
+    "prepare-web": "node scripts/prepare-web.mjs",
+    "assets": "node scripts/make-assets.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/haptics": "^7.0.0",
+    "@capacitor/ios": "^7.0.0",
+    "@capacitor/splash-screen": "^7.0.0",
+    "@capacitor/status-bar": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^7.0.0",
+    "sharp": "^0.34.0"
+  }
+}

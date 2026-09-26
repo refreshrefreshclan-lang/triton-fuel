@@ -1,0 +1,20 @@
+{
+  "appId": "io.github.refreshrefreshclanlang.tritonfuel",
+  "appName": "Triton Fuel",
+  "webDir": "www",
+  "backgroundColor": "#F2F2F7",
+  "android": {
+    "adjustMarginsForEdgeToEdge": "auto"
+  },
+  "ios": {
+    "contentInset": "never"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 700,
+      "launchAutoHide": true,
+      "backgroundColor": "#F2F2F7",
+      "showSpinner": false
+    }
+  }
+}
