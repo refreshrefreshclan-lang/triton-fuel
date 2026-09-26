@@ -53,7 +53,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--pro);outline-offset:2px;border-radius:10px}
 .num{font-family:var(--round);font-variant-numeric:tabular-nums}
 
-.app{max-width:480px;margin:0 auto;padding-inline:16px;padding-block:8px calc(96px + env(safe-area-inset-bottom,0px))}
+.app{max-width:480px;margin:0 auto;padding-inline:16px;padding-block:8px calc(96px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)))}
 .screen{display:flex;flex-direction:column;gap:22px}
 
 /* Header */
@@ -217,7 +217,7 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
 .diet{display:inline-block;font-size:10.5px;font-weight:700;color:var(--carb);background:color-mix(in srgb,var(--carb) 13%,transparent);border-radius:5px;padding:1px 5px;margin-left:6px;vertical-align:2px;letter-spacing:.02em}
 
 /* Tab bar */
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--tabbar);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);border-top:1px solid var(--hair);padding:6px 16px calc(6px + env(safe-area-inset-bottom,0px))}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--tabbar);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);border-top:1px solid var(--hair);padding:6px 16px calc(6px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)))}
 .tabbar .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr}
 .tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;font-size:11px;font-weight:600;color:var(--ink-3)}
 .tab[aria-selected="true"]{color:var(--kcal)}
@@ -225,7 +225,7 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
 /* Sheet */
 .scrim{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.32);display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .22s}
 .scrim.show{opacity:1}
-.sheet{background:var(--bg);width:100%;max-width:520px;max-height:90%;overflow:auto;border-radius:22px 22px 0 0;padding:8px 16px calc(20px + env(safe-area-inset-bottom,0px));transform:translateY(24px);transition:transform .28s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;gap:16px}
+.sheet{background:var(--bg);width:100%;max-width:520px;max-height:90%;overflow:auto;border-radius:22px 22px 0 0;padding:8px 16px calc(20px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)));transform:translateY(24px);transition:transform .28s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;gap:16px}
 .scrim.show .sheet{transform:none}
 .grabber{width:36px;height:5px;border-radius:99px;background:var(--ink-3);opacity:.5;margin:2px auto 0}
 .sheet-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
@@ -265,7 +265,7 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
 .field .u{font-size:13px;color:var(--ink-2);width:26px}
 
 /* Toast */
-.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;z-index:50;background:var(--ink);color:var(--bg);border-radius:14px;padding:11px 12px 11px 16px;display:flex;align-items:center;gap:14px;font-size:14px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.2);transition:all .25s;max-width:calc(100% - 32px);pointer-events:none}
+.toast{position:fixed;left:50%;bottom:calc(84px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)));transform:translate(-50%,20px);opacity:0;z-index:50;background:var(--ink);color:var(--bg);border-radius:14px;padding:11px 12px 11px 16px;display:flex;align-items:center;gap:14px;font-size:14px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.2);transition:all .25s;max-width:calc(100% - 32px);pointer-events:none}
 .toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .toast button{color:var(--kcal);font-weight:700;padding:4px 6px;filter:brightness(1.15)}
 </style>

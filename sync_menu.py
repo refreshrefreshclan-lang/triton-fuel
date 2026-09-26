@@ -525,7 +525,7 @@ PAGE_HEAD = """<!doctype html>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Triton Fuel">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<style>:root{padding-top:env(safe-area-inset-top,0px)}body{margin:0}</style>
+<style>:root{padding-top:var(--safe-area-inset-top,env(safe-area-inset-top,0px))}body{margin:0}</style>
 </head>
 <body>
 """
