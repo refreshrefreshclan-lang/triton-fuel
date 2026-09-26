@@ -13,6 +13,7 @@
   --fib:#AF52DE; --sug:#5E5CE6; --na:#22A8C4; --sat:#FF6B35; --chol:#E0A800;
   --warn:#FF3B30; --ok:#2DBE58;
   --tabbar:rgba(249,249,251,.82);
+  --ch-kcal:#FF375F; --ch-pro:#2F7BF6; --ch-carb:#1E9E4A; --ch-fat:#C77500; --ch-fib:#AF52DE;
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Figtree",system-ui,sans-serif;
   --display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Figtree",system-ui,sans-serif;
   --round:ui-rounded,"SF Pro Rounded","Nunito",-apple-system,system-ui,sans-serif;
@@ -28,6 +29,7 @@
     --kcal:#FF4F73; --pro:#4A8FFF; --carb:#34D463; --fat:#FFB02E;
     --fib:#C274F0; --sug:#7D7BFF; --na:#3CC4DE; --sat:#FF8458; --chol:#FFCC1A;
     --tabbar:rgba(22,22,24,.82);
+    --ch-kcal:#FF4F73; --ch-pro:#4A8FFF; --ch-carb:#34D463; --ch-fat:#FFB02E; --ch-fib:#C274F0;
   }
 }
 :root[data-theme="dark"]{
@@ -40,6 +42,7 @@
   --kcal:#FF4F73; --pro:#4A8FFF; --carb:#34D463; --fat:#FFB02E;
   --fib:#C274F0; --sug:#7D7BFF; --na:#3CC4DE; --sat:#FF8458; --chol:#FFCC1A;
   --tabbar:rgba(22,22,24,.82);
+  --ch-kcal:#FF4F73; --ch-pro:#4A8FFF; --ch-carb:#34D463; --ch-fat:#FFB02E; --ch-fib:#C274F0;
 }
 
 *{box-sizing:border-box}
@@ -183,11 +186,38 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
 .chips button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;line-height:1.2}
 .chips button .h{font-size:11px;font-weight:600;opacity:.62}
 .chips button.off{opacity:.55}
+.nrow .note-sm{font-size:12.5px;color:var(--ink-2)}
+.macro .goal.free{color:var(--ink-2)}
+/* Week / history */
+.metric-chips button{flex-direction:row;align-items:center;gap:7px}
+.metric-chips button .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.chart-card{padding:16px 16px 12px;display:flex;flex-direction:column;gap:10px}
+.chart-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;min-height:74px}
+.chart-head .big{font-family:var(--round);font-weight:800;font-size:34px;letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums}
+.chart-head .big small{font-family:var(--sans);font-size:15px;font-weight:600;color:var(--ink-2);margin-left:4px;letter-spacing:0}
+.chart-head .rng{font-size:13.5px;color:var(--ink-2);font-variant-numeric:tabular-nums;margin-top:1px}
+.pager{display:flex;gap:6px;flex:none}
+.pager button{width:32px;height:32px;border-radius:50%;background:var(--fill);display:grid;place-items:center;color:var(--ink)}
+.pager button:disabled{opacity:.3;cursor:default}
+.chart{position:relative;width:100%;touch-action:pan-y}
+.chart svg{display:block;width:100%;overflow:visible}
+.chart .empty-msg{position:absolute;inset:0 36px 24px 0;display:grid;place-items:center;text-align:center;color:var(--ink-2);font-size:13.5px;padding:0 20px}
+.table-card{padding:0}
+.table-card summary{padding:13px 16px;font-weight:600;cursor:pointer;color:var(--pro)}
+.table-card table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.table-card td,.table-card th{padding:8px 16px;border-top:1px solid var(--hair);text-align:left}
+.table-card td:last-child,.table-card th:last-child{text-align:right}
+.table-card th{font-size:12px;color:var(--ink-2);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.stat{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:12px 16px;position:relative}
+.stat + .stat::before{content:"";position:absolute;top:0;left:16px;right:0;height:1px;background:var(--hair)}
+.stat span{color:var(--ink-2);font-size:14px}
+.stat b{font-family:var(--round);font-weight:800;font-variant-numeric:tabular-nums}
+.stat b small{font-family:var(--sans);font-weight:500;color:var(--ink-2);font-size:12.5px;margin-left:3px}
 .diet{display:inline-block;font-size:10.5px;font-weight:700;color:var(--carb);background:color-mix(in srgb,var(--carb) 13%,transparent);border-radius:5px;padding:1px 5px;margin-left:6px;vertical-align:2px;letter-spacing:.02em}
 
 /* Tab bar */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--tabbar);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);border-top:1px solid var(--hair);padding:6px 16px calc(6px + env(safe-area-inset-bottom,0px))}
-.tabbar .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr}
+.tabbar .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr}
 .tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;font-size:11px;font-weight:600;color:var(--ink-3)}
 .tab[aria-selected="true"]{color:var(--kcal)}
 
@@ -269,7 +299,7 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
     </div>
 
     <div class="section">
-      <div class="section-h"><h2>Nutrients</h2><span class="aside">Daily targets</span></div>
+      <div class="section-h"><h2>Nutrients</h2><span class="aside">Today</span></div>
       <div class="card list" id="nutrients"></div>
     </div>
 
@@ -317,6 +347,37 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
       <p class="note" id="menu-note"></p>
     </div>
   </section>
+
+  <!-- WEEK / HISTORY -->
+  <section class="screen" id="scr-week" aria-label="Week" hidden>
+    <header class="head">
+      <div>
+        <div class="eyebrow">History</div>
+        <h1 class="large-title" id="wk-title">Calories</h1>
+      </div>
+    </header>
+    <div class="banner" id="wk-sample" hidden><div><b>Example history.</b> Your own days replace it once you tap Start fresh on Today.</div></div>
+    <div class="chips-scroll"><div class="chips metric-chips" id="wk-metrics" role="group" aria-label="Nutrient"></div></div>
+    <div class="seg" id="wk-range" role="group" aria-label="Time range">
+      <button type="button" data-r="W">Week</button><button type="button" data-r="M">Month</button><button type="button" data-r="Y">Year</button><button type="button" data-r="A">All</button>
+    </div>
+    <div class="card chart-card">
+      <div class="chart-head">
+        <div>
+          <div class="eyebrow" id="wk-label">Daily average</div>
+          <div class="big" aria-live="polite"><span id="wk-value">0</span><small id="wk-unit">kcal</small></div>
+          <div class="rng" id="wk-rangetext"></div>
+        </div>
+        <div class="pager">
+          <button type="button" id="wk-prev" aria-label="Earlier"><svg width="9" height="14" viewBox="0 0 9 14" aria-hidden="true"><path d="M7 1.5L2 7l5 5.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button type="button" id="wk-next" aria-label="Later"><svg width="9" height="14" viewBox="0 0 9 14" aria-hidden="true"><path d="M2 1.5L7 7l-5 5.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+      </div>
+      <div class="chart" id="wk-chart"></div>
+    </div>
+    <div class="card" id="wk-stats"></div>
+    <details class="card table-card"><summary>Show as table</summary><div id="wk-table"></div></details>
+  </section>
 </div>
 
 <nav class="tabbar" aria-label="Sections">
@@ -328,6 +389,10 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
     <button class="tab" role="tab" id="tab-menu" aria-selected="false" type="button">
       <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true"><path d="M8 3.5v7.2a2.3 2.3 0 0 1-2.3 2.3M8 3.5v7.2a2.3 2.3 0 0 0 2.3 2.3M8 13v9.5M5.7 3.5V10M10.3 3.5V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 22.5V3.5c-2.6 1.4-3.8 4.4-3.8 8.6v2.2h3.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Dining
+    </button>
+    <button class="tab" role="tab" id="tab-week" aria-selected="false" type="button">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true"><rect x="4" y="13" width="3.6" height="8.5" rx="1.3" fill="currentColor"/><rect x="9.5" y="8" width="3.6" height="13.5" rx="1.3" fill="currentColor"/><rect x="15" y="11" width="3.6" height="10.5" rx="1.3" fill="currentColor"/><rect x="20.5" y="5" width="3.6" height="16.5" rx="1.3" fill="currentColor" opacity=".55"/></svg>
+      Week
     </button>
   </div>
 </nav>
@@ -344,18 +409,16 @@ const MACROS = [
   {k:'carb',label:'Carbs',   color:'var(--carb)',kcalPerG:4, ang:150},
   {k:'fat', label:'Fat',     color:'var(--fat)', kcalPerG:9, ang:30},
 ];
+// Tracked nutrients: the ones that matter for training. Only protein and fat have targets;
+// carbs have no limit and fill whatever calories are left.
 const NUTRIENTS = [
-  {k:'pro', label:'Protein',       unit:'g',  color:'var(--pro)',  kind:'goal',  ic:'P'},
-  {k:'carb',label:'Carbohydrates', unit:'g',  color:'var(--carb)', kind:'goal',  ic:'C'},
-  {k:'fat', label:'Total fat',     unit:'g',  color:'var(--fat)',  kind:'goal',  ic:'F'},
-  {k:'fib', label:'Fiber',         unit:'g',  color:'var(--fib)',  kind:'goal',  ic:'Fb'},
-  {k:'sug', label:'Sugars',        unit:'g',  color:'var(--sug)',  kind:'limit', ic:'S'},
-  {k:'sat', label:'Saturated fat', unit:'g',  color:'var(--sat)',  kind:'limit', ic:'Sf'},
-  {k:'na',  label:'Sodium',        unit:'mg', color:'var(--na)',   kind:'limit', ic:'Na'},
-  {k:'chol',label:'Cholesterol',   unit:'mg', color:'var(--chol)', kind:'limit', ic:'Ch'},
+  {k:'pro', label:'Protein',       unit:'g', color:'var(--pro)',  goal:true,  ic:'P'},
+  {k:'carb',label:'Carbohydrates', unit:'g', color:'var(--carb)', goal:false, ic:'C'},
+  {k:'fat', label:'Total fat',     unit:'g', color:'var(--fat)',  goal:true,  ic:'F'},
+  {k:'fib', label:'Fiber',         unit:'g', color:'var(--fib)',  goal:false, ic:'Fb'},
 ];
 const NKEYS = ['kcal','pro','carb','fat','sat','trans','chol','na','fib','sug'];
-const DEFAULT_GOALS = {kcal:2200, pro:140, carb:250, fat:73, fib:30, sug:50, sat:20, na:2300, chol:300};
+const DEFAULT_GOALS = {kcal:2200, pro:140, fat:73};
 const DV = {fat:78, sat:20, chol:300, na:2300, carb:275, fib:28, pro:50};
 const MEALS = ['Breakfast','Lunch','Dinner','Late Night'];
 const PERIOD_ORDER = ['Breakfast','Brunch','Lunch','Lunch/Dinner','Dinner','Late Night','Menu'];
@@ -475,18 +538,35 @@ function realExamples(){
   if(MENU.sample) return null;
   const find = (hall, name, period) => { const h=MENU.halls.find(x=>x.name===hall); return h && h.items.find(i=>i.name===name && (!period||i.period===period)); };
   const picks = [['OceanView','Everything Bagel',1,'Breakfast'],['OceanView','Chicken Shawarma Mazza Bowl',1,'Lunch'],['OceanView','Hummus and Pita',0.5,'Lunch']]
-    .map(([h,n,s,m])=>{ const it=find(h,n); return it ? snap(it,h,s,m) : null; }).filter(Boolean);
+    .map(([h,n,s,m])=>{ const it=find(h,n); return it ? {...snap(it,h,s,m), ex:true} : null; }).filter(Boolean);
   return picks.length>=2 ? picks : null;
+}
+const HKEYS = ['kcal','pro','carb','fat','fib'];
+const isoOf = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const keyToISO = k => { const [y,m,d]=String(k).split('-').map(Number); return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0'); };
+const realEntries = log => (log||[]).filter(e=>!e.ex && !e.placeholder);
+function dayTotals(log){
+  const t={n:log.length}; HKEYS.forEach(k=>t[k]=Math.round(log.reduce((a,e)=>a+(e.n[k]||0)*e.s,0)*10)/10);
+  return t;
+}
+// Keep each finished day's totals so the Week tab can chart weeks, months and years.
+function archiveDay(st){
+  const real = realEntries(st.log);
+  if(!st.day || !real.length) return;
+  st.history = st.history || {};
+  st.history[keyToISO(st.day)] = dayTotals(real);
 }
 let state = load();
 if(state && state.example && state.day===todayKey() && state.log.every(e=>e.placeholder)){ const ex=realExamples(); if(ex) state.log=ex; }
 if(!state){
-  const ex = (id,s,meal)=>({...snap(ITEMS[id],'OceanView',s,meal), placeholder:true});
+  const ex = (id,s,meal)=>({...snap(ITEMS[id],'OceanView',s,meal), placeholder:true, ex:true});
   state = {day:todayKey(), goals:{...DEFAULT_GOALS}, example:true,
     log: realExamples() || [ex('acai',1,'Breakfast'), ex('whey',1,'Breakfast'), ex('shw-bowl',1,'Lunch'), ex('hummus',0.5,'Lunch')]};
 } else if(state.day!==todayKey()){
+  archiveDay(state);
   state.day=todayKey(); state.log=[]; state.example=false;
 }
+state.history = state.history || {};
 // entries saved by version 1 of the app only stored the item id
 state.log = (state.log||[]).map(e=> e.n ? e : (ITEMS[e.id] ? {...snap(ITEMS[e.id],'OceanView',e.s,LETTER[e.p]||'Lunch'), uid:e.uid, placeholder:true} : null)).filter(Boolean);
 state.goals = {...DEFAULT_GOALS, ...(state.goals||{})};
@@ -618,26 +698,30 @@ function renderToday(){
     : `<b>${fmt(-left)}</b> kcal over your goal`;
   animateRing({kcal:t.kcal,pro:t.pro,carb:t.carb,fat:t.fat});
 
+  // carbs have no limit: show how much room is left in the calorie goal instead
+  const carbRoom = Math.max(0, (g.kcal - t.kcal)/4);
   document.getElementById('macros').innerHTML = MACROS.map(m=>{
-    const pct = Math.min(100, t[m.k]/g[m.k]*100);
+    const hasGoal = m.k!=='carb';
+    const pct = hasGoal ? Math.min(100, t[m.k]/g[m.k]*100) : Math.min(100, t.carb/Math.max(1, t.carb+carbRoom)*100);
     return `<div class="macro">
       <div class="name"><span class="sw" style="background:${m.color}"></span>${m.label}</div>
       <div class="val">${fmtG(t[m.k])}<small>g</small></div>
       <div class="bar"><i style="width:${pct}%;background:${m.color}"></i></div>
-      <div class="goal">of ${fmt(g[m.k])} g</div>
+      <div class="goal${hasGoal?'':' free'}">${hasGoal ? `of ${fmt(g[m.k])} g` : (carbRoom>0 ? `≈${fmt(carbRoom)} g room left` : 'No limit')}</div>
     </div>`;
   }).join('');
 
   document.getElementById('nutrients').innerHTML = NUTRIENTS.map(n=>{
-    const v=t[n.k], goal=g[n.k], pct=Math.min(100,v/goal*100);
-    const over = n.kind==='limit' && v>goal;
-    const tag = n.kind==='limit' ? `<span class="tag${over?' over':''}">${over?'Over limit':'Limit'}</span>` : '';
+    const v=t[n.k];
+    const detail = n.goal
+      ? `<div class="bar"><i style="width:${Math.min(100,v/g[n.k]*100)}%;background:${n.color}"></i></div>`
+      : `<div class="note-sm">${n.k==='carb' ? 'No limit · fills the rest of your calories' : 'No target'}</div>`;
     return `<div class="row nrow">
       <span class="chip-ic" style="background:${n.color}">${n.ic}</span>
       <div class="mid">
-        <div class="top"><span class="label">${n.label}${tag}</span>
-          <span class="amt"><b>${fmtG(v)}</b> / ${fmt(goal)} ${n.unit}</span></div>
-        <div class="bar"><i style="width:${pct}%;background:${over?'var(--warn)':n.color}"></i></div>
+        <div class="top"><span class="label">${n.label}</span>
+          <span class="amt"><b>${fmtG(v)}</b>${n.goal ? ` / ${fmt(g[n.k])}` : ''} ${n.unit}</span></div>
+        ${detail}
       </div>
     </div>`;
   }).join('');
@@ -905,10 +989,10 @@ function itemSheet(it, entry){
 }
 
 function goalsSheet(){
-  const fields = [{k:'kcal',label:'Calories',unit:'kcal',color:'var(--kcal)',ic:'kc'}, ...NUTRIENTS];
+  const fields = [{k:'kcal',label:'Calories',unit:'kcal',color:'var(--kcal)',ic:'kc'}, ...NUTRIENTS.filter(n=>n.goal)];
   const html = `
     <div class="sheet-h">
-      <div><h3>Daily goals</h3><p>Limits (sugars, sodium, saturated fat, cholesterol) turn red when you go over.</p></div>
+      <div><h3>Daily goals</h3><p>Protein and fat are your targets. Carbs have no limit: they fill the rest of your calories.</p></div>
       <button class="x" type="button" data-close aria-label="Close"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     </div>
     <form class="card" id="goals-form">
@@ -954,18 +1038,183 @@ document.getElementById('menu-file').addEventListener('change', e=>{
   rd.readAsText(f);
 });
 
+/* ---------- Week tab: history bar chart ---------- */
+const METRICS = [
+  {k:'kcal', label:'Calories', unit:'kcal', color:'var(--ch-kcal)', goal:'kcal'},
+  {k:'pro',  label:'Protein',  unit:'g',    color:'var(--ch-pro)',  goal:'pro'},
+  {k:'carb', label:'Carbs',    unit:'g',    color:'var(--ch-carb)'},
+  {k:'fat',  label:'Fat',      unit:'g',    color:'var(--ch-fat)',  goal:'fat'},
+  {k:'fib',  label:'Fiber',    unit:'g',    color:'var(--ch-fib)'},
+];
+const wk = {metric:'kcal', range:'W', offset:0, sel:null, hover:null, bars:[]};
+const addDays = (d,n) => { const x=new Date(d); x.setDate(x.getDate()+n); return x; };
+const today0 = () => { const d=new Date(); d.setHours(0,0,0,0); return d; };
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// Believable past days so the chart has something to show while the example day is on.
+function sampleHistory(){
+  const out = {}; let seed = 20260925;
+  const rnd = () => (seed = seed*16807 % 2147483647) / 2147483647;
+  const t = today0();
+  for(let i=1;i<=420;i++){
+    if(rnd() < 0.15) continue;
+    const pro=95+rnd()*70, fat=48+rnd()*40, carb=170+rnd()*150, fib=12+rnd()*18;
+    out[isoOf(addDays(t,-i))] = {pro:r1(pro), fat:r1(fat), carb:r1(carb), fib:r1(fib), kcal:Math.round(pro*4+carb*4+fat*9), n:3};
+  }
+  return out;
+}
+function historyMap(){
+  const h = {...(state.example ? sampleHistory() : {}), ...(state.history||{})};
+  const live = state.example ? state.log : realEntries(state.log);
+  if(live.length) h[isoOf(today0())] = dayTotals(live);
+  return h;
+}
+
+// Build the bars for the current range. Day bars carry a day total; month/year bars carry a daily average.
+function buildBars(){
+  const H = historyMap(), k = wk.metric, t = today0(), bars = [];
+  const dayBar = (d, label, strong) => { const e=H[isoOf(d)];
+    return {label, strong, title:d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}),
+      value: e ? e[k] : null, sum: e ? e[k] : 0, days: e ? 1 : 0, future: d>t, day:isoOf(d)}; };
+  const groupBar = (from, to, label, title) => { let sum=0, days=0;
+    for(let d=new Date(from); d<=to; d=addDays(d,1)){ const e=H[isoOf(d)]; if(e){ sum+=e[k]; days++; } }
+    return {label, title, value: days ? sum/days : null, sum, days, future: from>t, avg:true}; };
+  let rangeText = '', periodStart, periodEnd;
+  if(wk.range==='W'){
+    periodStart = addDays(t, -t.getDay() + 7*wk.offset); periodEnd = addDays(periodStart, 6);
+    for(let i=0;i<7;i++){ const d=addDays(periodStart,i); bars.push(dayBar(d, 'SMTWTFS'[i], +d===+t)); }
+    const same = periodStart.getMonth()===periodEnd.getMonth();
+    rangeText = `${MONTHS[periodStart.getMonth()]} ${periodStart.getDate()}–${same?'':MONTHS[periodEnd.getMonth()]+' '}${periodEnd.getDate()}, ${periodEnd.getFullYear()}`;
+  } else if(wk.range==='M'){
+    periodStart = new Date(t.getFullYear(), t.getMonth()+wk.offset, 1); periodEnd = new Date(periodStart.getFullYear(), periodStart.getMonth()+1, 0);
+    for(let d=new Date(periodStart); d<=periodEnd; d=addDays(d,1)) bars.push(dayBar(d, [1,8,15,22,29].includes(d.getDate()) ? String(d.getDate()) : '', +d===+t));
+    rangeText = periodStart.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  } else if(wk.range==='Y'){
+    const y = t.getFullYear()+wk.offset; periodStart = new Date(y,0,1); periodEnd = new Date(y,11,31);
+    for(let m=0;m<12;m++) bars.push(groupBar(new Date(y,m,1), new Date(y,m+1,0), MONTHS[m][0], `${MONTHS[m]} ${y}`));
+    rangeText = String(y);
+  } else {
+    const keys = Object.keys(H).sort();
+    const first = keys.length ? new Date(keys[0]+'T00:00') : t;
+    const months = (t.getFullYear()-first.getFullYear())*12 + t.getMonth()-first.getMonth() + 1;
+    if(months <= 24){
+      for(let i=months-1;i>=0;i--){ const s=new Date(t.getFullYear(), t.getMonth()-i, 1);
+        bars.push(groupBar(s, new Date(s.getFullYear(), s.getMonth()+1, 0), s.getMonth()===0 || i===months-1 ? `${MONTHS[s.getMonth()]} ’${String(s.getFullYear()).slice(2)}` : (months<=12 ? MONTHS[s.getMonth()][0] : ''), `${MONTHS[s.getMonth()]} ${s.getFullYear()}`)); }
+    } else {
+      for(let y=first.getFullYear(); y<=t.getFullYear(); y++) bars.push(groupBar(new Date(y,0,1), new Date(y,11,31), String(y), String(y)));
+    }
+    periodStart = first; periodEnd = t;
+    rangeText = keys.length ? `${first.toLocaleDateString('en-US',{month:'short',year:'numeric'})} – today` : 'No history yet';
+  }
+  return {bars, rangeText, periodStart, periodEnd, H};
+}
+const niceStep = raw => { const p=Math.pow(10, Math.floor(Math.log10(raw))); const f=raw/p; return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*p; };
+const fmtVal = (v, m) => v==null ? '—' : (m.unit==='kcal' ? fmt(v) : fmtG(v));
+
+function drawChart(bars, metric, goalVal){
+  const box = document.getElementById('wk-chart');
+  const W = Math.max(260, box.clientWidth || 320), H = 210, top = 14, bottom = 24, right = 38;
+  const plotW = W - right, plotH = H - top - bottom, n = bars.length, step = plotW / n;
+  const bw = Math.max(2, Math.min(step - 2, n <= 7 ? 30 : n <= 12 ? 22 : step*0.72));
+  const vals = bars.map(b=>b.value).filter(v=>v!=null);
+  const maxV = Math.max(1, ...vals, goalVal||0);
+  const st = niceStep(maxV/3), yMax = Math.ceil(maxV*1.02/st)*st;
+  const y = v => top + plotH - (v/yMax)*plotH;
+  const active = wk.hover ?? wk.sel;
+  let g = '';
+  const tickTxt = v => metric.unit==='kcal'&&v>=1000 ? (Math.round(v/100)/10)+'k' : Math.round(v);
+  for(let v=0; v<=yMax+1e-9; v+=st){
+    g += `<line x1="0" x2="${plotW}" y1="${y(v)}" y2="${y(v)}" style="stroke:var(--hair)" stroke-width="1"/>`;
+    if(!goalVal || Math.abs(y(v)-y(goalVal))>13)
+      g += `<text x="${plotW+6}" y="${y(v)+4}" font-size="11" style="fill:var(--ink-3)" font-family="inherit">${tickTxt(v)}</text>`;
+  }
+  bars.forEach((b,i)=>{
+    const cx = step*i + step/2;
+    if(b.value!=null && b.value>0){
+      const h = Math.max(2, y(0)-y(b.value)), x = cx-bw/2, r = Math.min(4, bw/2, h);
+      const yy = y(0)-h;
+      g += `<path d="M${x},${y(0)} V${yy+r} Q${x},${yy} ${x+r},${yy} H${x+bw-r} Q${x+bw},${yy} ${x+bw},${yy+r} V${y(0)} Z" style="fill:${metric.color}" opacity="${active!=null && active!==i ? .32 : 1}"/>`;
+    }
+    if(b.label) g += `<text x="${cx}" y="${H-6}" text-anchor="middle" font-size="11" font-weight="${b.strong?800:500}" style="fill:${b.strong?'var(--ink)':'var(--ink-3)'}" font-family="inherit">${esc(b.label)}</text>`;
+  });
+  if(goalVal){
+    g += `<line x1="0" x2="${plotW}" y1="${y(goalVal)}" y2="${y(goalVal)}" style="stroke:var(--ink-2)" stroke-width="1.5" stroke-dasharray="4 4"/>`;
+    g += `<text x="${plotW+6}" y="${y(goalVal)+4}" font-size="11" font-weight="800" style="fill:var(--ink)" font-family="inherit">${tickTxt(goalVal)}</text>`;
+    g += `<text x="${plotW+6}" y="${y(goalVal)-9}" font-size="9.5" font-weight="700" style="fill:var(--ink-2)" font-family="inherit">GOAL</text>`;
+  }
+  // full-height hit targets, one per bar
+  bars.forEach((b,i)=>{ g += `<rect data-i="${i}" x="${step*i}" y="0" width="${step}" height="${H-bottom}" fill="transparent" style="cursor:${b.value!=null?'pointer':'default'}"/>`; });
+  const empty = !vals.length ? `<div class="empty-msg">Nothing logged in this ${ {W:'week',M:'month',Y:'year',A:'range'}[wk.range] }. Days you log on the Today tab show up here.</div>` : '';
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="${esc(metric.label)} bar chart">${g}</svg>${empty}`;
+}
+
+function renderWeek(){
+  const metric = METRICS.find(m=>m.k===wk.metric);
+  const goalVal = metric.goal ? state.goals[metric.goal] : null;
+  document.getElementById('wk-title').textContent = metric.label;
+  document.getElementById('wk-sample').hidden = !state.example;
+  document.getElementById('wk-metrics').innerHTML = METRICS.map(m=>`<button type="button" data-m="${m.k}" aria-pressed="${m.k===wk.metric}"><span class="dot" style="background:${m.color}"></span>${m.label}</button>`).join('');
+  document.querySelectorAll('#wk-range button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.r===wk.range));
+  const {bars, rangeText, periodStart, H} = buildBars();
+  wk.bars = bars;
+  if(wk.sel!=null && (wk.sel>=bars.length || bars[wk.sel].value==null)) wk.sel = null;
+
+  // header: the tapped/hovered bar, or the period's daily average over logged days
+  const active = wk.hover ?? wk.sel;
+  const logged = bars.reduce((a,b)=>a+b.days,0), sum = bars.reduce((a,b)=>a+b.sum,0);
+  if(active!=null && bars[active] && bars[active].value!=null){
+    const b = bars[active];
+    document.getElementById('wk-label').textContent = b.avg ? 'Daily average' : 'Total';
+    document.getElementById('wk-value').textContent = fmtVal(b.value, metric);
+    document.getElementById('wk-rangetext').textContent = b.avg ? `${b.title} · ${b.days} day${b.days>1?'s':''} logged` : b.title;
+  } else {
+    document.getElementById('wk-label').textContent = 'Daily average';
+    document.getElementById('wk-value').textContent = logged ? fmtVal(sum/logged, metric) : '—';
+    document.getElementById('wk-rangetext').textContent = logged ? `${rangeText} · ${logged} day${logged>1?'s':''} logged` : rangeText;
+  }
+  document.getElementById('wk-unit').textContent = metric.unit;
+  const keys = Object.keys(H).sort(), earliest = keys.length ? new Date(keys[0]+'T00:00') : today0();
+  document.getElementById('wk-prev').disabled = wk.range==='A' || periodStart <= earliest;
+  document.getElementById('wk-next').disabled = wk.range==='A' || wk.offset>=0;
+  drawChart(bars, metric, goalVal);
+
+  // stats for the period, always from individual days
+  const dayVals = [];
+  const pEnd = wk.range==='A' ? today0() : (wk.range==='W' ? addDays(periodStart,6) : wk.range==='M' ? new Date(periodStart.getFullYear(), periodStart.getMonth()+1, 0) : new Date(periodStart.getFullYear(),11,31));
+  keys.forEach(k=>{ const d=new Date(k+'T00:00'); if(d>=periodStart && d<=pEnd) dayVals.push({d, v:H[k][metric.k]}); });
+  const best = dayVals.reduce((a,b)=> !a || b.v>a.v ? b : a, null);
+  const stats = [];
+  if(goalVal){
+    const hit = metric.k==='kcal' ? dayVals.filter(x=>Math.abs(x.v-goalVal)<=goalVal*0.1).length : dayVals.filter(x=>x.v>=goalVal).length;
+    stats.push([metric.k==='kcal' ? 'Days within 10% of goal' : 'Days at or above goal', `${hit}<small>of ${dayVals.length}</small>`]);
+  }
+  stats.push(['Highest day', best ? `${fmtVal(best.v, metric)}<small>${metric.unit} · ${best.d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</small>` : '—']);
+  document.getElementById('wk-stats').innerHTML = stats.map(([a,b])=>`<div class="stat"><span>${a}</span><b>${b}</b></div>`).join('');
+  document.getElementById('wk-table').innerHTML = `<table><thead><tr><th>${bars[0]&&bars[0].avg?'Month / year':'Day'}</th><th>${esc(metric.label)} (${metric.unit}${bars[0]&&bars[0].avg?', daily avg':''})</th></tr></thead><tbody>${
+    bars.filter(b=>b.value!=null).map(b=>`<tr><td>${esc(b.title)}</td><td>${fmtVal(b.value, metric)}</td></tr>`).join('') || '<tr><td colspan="2">Nothing logged</td></tr>'}</tbody></table>`;
+}
+document.getElementById('wk-metrics').addEventListener('click',e=>{ const b=e.target.closest('[data-m]'); if(!b) return; wk.metric=b.dataset.m; renderWeek(); });
+document.getElementById('wk-range').addEventListener('click',e=>{ const b=e.target.closest('[data-r]'); if(!b) return; wk.range=b.dataset.r; wk.offset=0; wk.sel=null; renderWeek(); });
+document.getElementById('wk-prev').onclick=()=>{ wk.offset--; wk.sel=null; renderWeek(); };
+document.getElementById('wk-next').onclick=()=>{ if(wk.offset<0){ wk.offset++; wk.sel=null; renderWeek(); } };
+const wkChart = document.getElementById('wk-chart');
+wkChart.addEventListener('click',e=>{ const r=e.target.closest('rect[data-i]'); if(!r) return; const i=+r.dataset.i; if(wk.bars[i].value==null) return; wk.sel = wk.sel===i ? null : i; wk.hover=null; renderWeek(); });
+wkChart.addEventListener('pointermove',e=>{ if(e.pointerType!=='mouse') return; const r=e.target.closest('rect[data-i]'); const i=r ? +r.dataset.i : null; const v = i!=null && wk.bars[i] && wk.bars[i].value!=null ? i : null; if(v!==wk.hover){ wk.hover=v; renderWeek(); } });
+wkChart.addEventListener('pointerleave',()=>{ if(wk.hover!=null){ wk.hover=null; renderWeek(); } });
+let wkResize; window.addEventListener('resize',()=>{ clearTimeout(wkResize); wkResize=setTimeout(()=>{ if(!document.getElementById('scr-week').hidden) renderWeek(); },120); });
+
 /* ---------- Wiring ---------- */
 function show(tab){
-  const today = tab==='today';
-  document.getElementById('scr-today').hidden = !today;
-  document.getElementById('scr-menu').hidden = today;
-  document.getElementById('tab-today').setAttribute('aria-selected',today);
-  document.getElementById('tab-menu').setAttribute('aria-selected',!today);
-  if(today){ shown=null; renderToday(); } else renderMenu();
+  ['today','menu','week'].forEach(t=>{
+    document.getElementById('scr-'+t).hidden = t!==tab;
+    document.getElementById('tab-'+t).setAttribute('aria-selected', t===tab);
+  });
+  if(tab==='today'){ shown=null; renderToday(); } else if(tab==='menu') renderMenu(); else { wk.hover=null; renderWeek(); }
   window.scrollTo(0,0);
 }
 document.getElementById('tab-today').onclick=()=>show('today');
 document.getElementById('tab-menu').onclick=()=>show('menu');
+document.getElementById('tab-week').onclick=()=>show('week');
 document.getElementById('open-goals').onclick=goalsSheet;
 document.getElementById('start-fresh').onclick=()=>{
   const prev=state.log.slice(); state.log=[]; state.example=false; save(); renderToday();
@@ -995,6 +1244,6 @@ document.getElementById('meals').addEventListener('click',e=>{
   const entry=state.log.find(x=>x.uid===b.dataset.uid); if(entry) itemSheet(entry, entry);
 });
 
-if(location.hash==='#dining') show('menu'); else renderToday();
+if(location.hash==='#dining') show('menu'); else if(location.hash==='#week') show('week'); else renderToday();
 })();
 </script>
