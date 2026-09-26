@@ -591,6 +591,18 @@ def main() -> None:
         log(f"\nFAILED: only {total} items found ({full} with full nutrition facts). Nothing was saved or published.")
         log("Run with --debug and send the debug folder to Claude so the script can be adjusted.")
         sys.exit(1)
+    if args.publish:
+        # Late in the day most halls have closed and HDH lists fewer items. Don't let a small late run
+        # replace a fuller menu for the same day (the app itself is still rebuilt with the latest template).
+        try:
+            prev = json.loads((Path(args.publish) / "menu.json").read_text(encoding="utf-8"))
+            prev_total = sum(len(h["items"]) for h in prev.get("halls", []))
+            if prev.get("date") == result["date"] and total < prev_total * 0.7:
+                log(f"\nKept the earlier menu for {prev['date']}: it has {prev_total} items, this run found only {total}.")
+                result, total = prev, prev_total
+                full = sum(1 for h in result["halls"] for it in h["items"] if it.get("complete", True))
+        except (OSError, ValueError, KeyError, TypeError):
+            pass
     (OUT / "menu.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
     app = build_app(result)
     if args.publish:
