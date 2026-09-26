@@ -512,6 +512,25 @@ def sync_hall(name: str, ids: dict, day: int, cache: dict, debug: bool) -> dict:
             "items": out_items}
 
 
+# The template is written as page content; this wraps it into a full page that phones display correctly.
+PAGE_HEAD = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Track your UCSD dining hall meals with official HDH nutrition facts.">
+<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Triton Fuel">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>:root{padding-top:env(safe-area-inset-top,0px)}body{margin:0}</style>
+</head>
+<body>
+"""
+
+
 def build_app(menu: dict) -> Path | None:
     if not TEMPLATE.exists():
         log("  (app_template.html not found next to this script, so I skipped building the app)")
@@ -522,6 +541,8 @@ def build_app(menu: dict) -> Path | None:
     start = html.index(marker) + len(marker)
     end = html.index("</script>", start)
     html = html[:start] + payload + html[end:]
+    if "<!doctype" not in html[:200].lower():
+        html = PAGE_HEAD + html + "\n</body>\n</html>\n"
     path = OUT / "Triton Fuel.html"
     path.write_text(html, encoding="utf-8")
     return path

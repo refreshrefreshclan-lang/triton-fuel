@@ -157,6 +157,7 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
 .add{width:32px;height:32px;border-radius:50%;background:color-mix(in srgb,var(--pro) 14%,transparent);color:var(--pro);display:grid;place-items:center;flex:none;transition:transform .15s}
 .add:active{transform:scale(.9)}
 .note{font-size:12.5px;color:var(--ink-2);padding-inline:4px;line-height:1.45}
+.note a{color:var(--pro)}
 .data-status{display:flex;align-items:center;gap:12px;padding:12px 14px}
 .status-dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 18%,transparent)}
 .status-dot.warn{background:var(--fat);box-shadow:0 0 0 4px color-mix(in srgb,var(--fat) 20%,transparent)}
@@ -793,12 +794,13 @@ function renderStatus(){
     s.textContent='Calories are real; protein, carbs and fat are placeholders. Load a synced menu file.';
   } else if(MENU.date && MENU.date!==todayISO()){
     dot.className='status-dot warn'; t.textContent=`Menu from ${shortDate(MENU.date)}`;
-    s.textContent='Today’s menu may differ. Load a newer menu file.';
+    s.textContent = menuCheck.ok===false ? 'You’re offline, so this is the last saved menu.' : 'Today’s menu hasn’t been published yet.';
   } else {
     dot.className='status-dot'; t.textContent='Official HDH nutrition facts';
     const when = MENU.generated ? new Date(MENU.generated).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : '';
-    s.textContent=`Today’s menus${when?' · updated '+when:''} · ${n.toLocaleString('en-US')} items`;
+    s.textContent=`Today’s menus${when?' · updated '+when:''} · ${n.toLocaleString('en-US')} items${menuCheck.ok===false?' · offline':''}`;
   }
+  document.querySelector('.file-btn').hidden = IS_NATIVE;
 }
 function renderHallList(){
   const rows = MENU.halls.map((h,i)=>({h,i,st:openState(h.hours),v:hallVenues(h).length}))
@@ -889,7 +891,7 @@ document.getElementById('toast-undo').onclick = ()=>{ if(lastUndo){ lastUndo(); 
 
 function addItem(it, s, meal){
   const e = snap(it, MENU.halls[hallIdx].name, s, meal);
-  state.log.push(e); save(); renderToday();
+  state.log.push(e); save(); renderToday(); haptic('medium');
   toast(`Added to ${meal} · ${fmt((it.n.kcal||0)*s)} kcal`, ()=>{ state.log=state.log.filter(x=>x.uid!==e.uid); save(); renderToday(); });
 }
 
@@ -1005,7 +1007,8 @@ function goalsSheet(){
     <div class="cta-row">
       <button class="cta" type="button" id="save-goals">Save goals</button>
       <button class="cta ghost" type="button" id="clear-day">Clear today’s log</button>
-    </div>`;
+    </div>
+    <p class="note">Menus and nutrition facts come from UC San Diego HDH Dining. Triton Fuel is an independent student project and isn’t affiliated with UC San Diego. Your logs stay on this device. <a href="https://refreshrefreshclan-lang.github.io/triton-fuel/privacy.html" target="_blank" rel="noopener">Privacy policy</a></p>`;
   openSheet(html, sh=>{
     sh.querySelector('#goals-form').addEventListener('submit',e=>e.preventDefault());
     sh.querySelector('#save-goals').onclick=()=>{
@@ -1198,13 +1201,55 @@ document.getElementById('wk-range').addEventListener('click',e=>{ const b=e.targ
 document.getElementById('wk-prev').onclick=()=>{ wk.offset--; wk.sel=null; renderWeek(); };
 document.getElementById('wk-next').onclick=()=>{ if(wk.offset<0){ wk.offset++; wk.sel=null; renderWeek(); } };
 const wkChart = document.getElementById('wk-chart');
-wkChart.addEventListener('click',e=>{ const r=e.target.closest('rect[data-i]'); if(!r) return; const i=+r.dataset.i; if(wk.bars[i].value==null) return; wk.sel = wk.sel===i ? null : i; wk.hover=null; renderWeek(); });
+wkChart.addEventListener('click',e=>{ const r=e.target.closest('rect[data-i]'); if(!r) return; const i=+r.dataset.i; if(wk.bars[i].value==null) return; haptic(); wk.sel = wk.sel===i ? null : i; wk.hover=null; renderWeek(); });
 wkChart.addEventListener('pointermove',e=>{ if(e.pointerType!=='mouse') return; const r=e.target.closest('rect[data-i]'); const i=r ? +r.dataset.i : null; const v = i!=null && wk.bars[i] && wk.bars[i].value!=null ? i : null; if(v!==wk.hover){ wk.hover=v; renderWeek(); } });
 wkChart.addEventListener('pointerleave',()=>{ if(wk.hover!=null){ wk.hover=null; renderWeek(); } });
 let wkResize; window.addEventListener('resize',()=>{ clearTimeout(wkResize); wkResize=setTimeout(()=>{ if(!document.getElementById('scr-week').hidden) renderWeek(); },120); });
 
+/* ---------- Phone app: haptics and the live menu ---------- */
+const IS_NATIVE = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform==='function' && window.Capacitor.isNativePlatform());
+function haptic(kind){
+  try{
+    const H = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics;
+    if(H && H.impact){ H.impact({style: kind==='medium' ? 'MEDIUM' : 'LIGHT'}); return; }
+    if(IS_NATIVE && navigator.vibrate) navigator.vibrate(kind==='medium' ? 14 : 6);
+  }catch(e){}
+}
+// The published menu file; the app built into the store version checks it whenever it opens.
+const MENU_URL = 'https://refreshrefreshclan-lang.github.io/triton-fuel/menu.json';
+const menuCheck = {at:0, ok:null};
+function rerenderCurrent(){
+  if(!document.getElementById('scr-menu').hidden) renderMenu();
+  else if(!document.getElementById('scr-week').hidden) renderWeek();
+}
+// Only the phone app and the GitHub Pages site can reach the menu file (other hosts block the request).
+const CAN_FETCH = IS_NATIVE || /\.github\.io$/.test(location.hostname);
+async function refreshMenu(force){
+  if(!CAN_FETCH) return;
+  if(!force && Date.now()-menuCheck.at < 15*60*1000) return;
+  menuCheck.at = Date.now();
+  try{
+    const ctl = new AbortController(); const timer = setTimeout(()=>ctl.abort(), 9000);
+    const r = await fetch(MENU_URL+'?t='+Date.now(), {cache:'no-store', signal:ctl.signal});
+    clearTimeout(timer);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const raw = await r.json();
+    const m = useMenuCalories(expandMenu(raw));
+    if(!validMenu(m)) throw new Error('not a menu');
+    menuCheck.ok = true;
+    if(MENU.sample || String(m.generated||'') > String(MENU.generated||'')){
+      try{ localStorage.setItem(MENU_KEY, JSON.stringify(raw)); }catch(e){}
+      MENU = m;
+      if(hallIdx!=null && !MENU.halls[hallIdx]) hallIdx = null;
+    }
+  }catch(e){ menuCheck.ok = false; }
+  rerenderCurrent();
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') refreshMenu(false); });
+
 /* ---------- Wiring ---------- */
 function show(tab){
+  haptic();
   ['today','menu','week'].forEach(t=>{
     document.getElementById('scr-'+t).hidden = t!==tab;
     document.getElementById('tab-'+t).setAttribute('aria-selected', t===tab);
@@ -1245,5 +1290,6 @@ document.getElementById('meals').addEventListener('click',e=>{
 });
 
 if(location.hash==='#dining') show('menu'); else if(location.hash==='#week') show('week'); else renderToday();
+refreshMenu(true);
 })();
 </script>
