@@ -1,0 +1,60 @@
+# Builds an installable Android test app (APK) from the latest published app.
+# Run it from the Actions tab ("Build Android app" > Run workflow); the APK appears under the run's Artifacts.
+
+name: Build Android app
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["mobile/**", "app_template.html", ".github/workflows/build-android.yml"]
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install Capacitor
+        run: npm install --no-audit --no-fund
+
+      - name: Copy the app into the shell
+        run: npm run prepare-web
+
+      - name: Make icons and launch screens
+        run: npm run assets
+
+      - name: Create the Android project
+        run: |
+          npx cap add android
+          npx capacitor-assets generate --android
+          npx cap sync android
+
+      - name: Build the APK
+        working-directory: mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Save the APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: triton-fuel-android
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

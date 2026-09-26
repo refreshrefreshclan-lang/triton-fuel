@@ -1,0 +1,49 @@
+# Makes the App Store / Google Play screenshots, icons and feature graphic from the live app.
+# Run it from the Actions tab ("Make store assets" > Run workflow). The images are saved to docs/store/
+# (viewable on the website) and attached to the run as a zip under Artifacts.
+
+name: Make store assets
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install tools
+        run: |
+          npm install --prefix store --no-audit --no-fund
+          npx --prefix store playwright install --with-deps chromium
+
+      - name: Take screenshots and make graphics
+        run: |
+          rm -rf docs/store
+          node store/shots.mjs docs/store
+          node store/graphics.mjs docs/store
+
+      - name: Save to the repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/store
+          git commit -m "Store assets $(date -u +%F)" || echo "No changes"
+          git pull --rebase && git push
+
+      - name: Attach as a zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: triton-fuel-store-assets
+          path: docs/store
