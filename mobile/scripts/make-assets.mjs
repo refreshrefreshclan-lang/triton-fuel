@@ -4,7 +4,8 @@ import sharp from 'sharp';
 fs.mkdirSync('assets', { recursive: true });
 const svg = f => fs.readFileSync(`resources/${f}`);
 const png = (f, size, out) => sharp(svg(f), { density: 72 * size / 1024 }).resize(size, size).png().toFile(`assets/${out}`);
-await png('icon.svg', 1024, 'icon-only.png');
+// the App Store rejects icons with transparency, so the full icon is flattened onto its dark background
+await sharp(svg('icon.svg'), { density: 72 }).resize(1024, 1024).flatten({ background: '#08080B' }).removeAlpha().png().toFile('assets/icon-only.png');
 await png('icon-foreground.svg', 1024, 'icon-foreground.png');
 await png('icon-background.svg', 1024, 'icon-background.png');
 // launch screens: the mark centred on the app's light and dark backgrounds
