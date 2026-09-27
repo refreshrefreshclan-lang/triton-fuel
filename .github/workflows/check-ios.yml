@@ -1,0 +1,44 @@
+# Checks that the iPhone app builds, on one of GitHub's Macs (free for public repositories).
+# It doesn't sign or upload anything; that happens in Xcode on your Mac. Run it from the Actions tab.
+
+name: Check iPhone build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["mobile/**", ".github/workflows/check-ios.yml"]
+
+jobs:
+  ios:
+    runs-on: macos-26
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Prepare the iPhone project
+        run: |
+          xcodebuild -version
+          npm install --no-audit --no-fund
+          npm run prepare-web
+          npm run assets
+          npx cap add ios
+          npx capacitor-assets generate --ios
+          node scripts/ios-tweaks.mjs
+          npx cap sync ios
+
+      - name: Build for the iPhone simulator
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build | tail -n 40
+          test "${PIPESTATUS[0]}" = "0"
