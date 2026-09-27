@@ -5,7 +5,8 @@
   "description": "Triton Fuel: nutrition tracker for UCSD dining halls (Capacitor app shell)",
   "scripts": {
     "prepare-web": "node scripts/prepare-web.mjs",
-    "assets": "node scripts/make-assets.mjs"
+    "assets": "node scripts/make-assets.mjs",
+    "ios": "bash scripts/ios.sh"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
