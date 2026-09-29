@@ -131,6 +131,7 @@ def save_debug(name: str, content: str) -> None:
 
 
 # ----------------------------------------------------------------------------- halls
+PROBLEMS: list[str] = []      # things a person should look at; the workflow emails the owner when there are any
 HOURS: dict[str, list] = {}   # locId -> [{sub, name, hours}] for today, read from the index page
 HOURS_RE = re.compile(r"^(.*?)\s+(\d{1,2}:\d\d [AP]M - \d{1,2}:\d\d [AP]M|Closed)$")
 
@@ -153,6 +154,26 @@ def read_hours(soup) -> None:
         m = HOURS_RE.match(text)
         if m and "locid" in q:
             HOURS.setdefault(q["locid"], []).append({"sub": q.get("sublocnum", "00"), "name": m.group(1), "hours": m.group(2)})
+
+
+def norm(s: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", (s or "").lower())
+
+
+def page_hall_name(html: str) -> str:
+    """The hall name HDH prints on a menu page, e.g. "64 Degrees" from "64 Degrees Food Menu | HDH Dining"."""
+    soup = BeautifulSoup(html, "html.parser")
+    t = clean(soup.title.get_text(" ")) if soup.title else ""
+    t = re.split(r"\s+Food Menu\b|\s*\|", t)[0].strip()
+    if not t:
+        h = soup.find(["h1", "h2"])
+        t = clean(h.get_text(" ")) if h else ""
+    return t
+
+
+def same_hall(name: str, page_name: str) -> bool:
+    a, b = norm(name), norm(page_name)
+    return bool(a and b) and (a in b or b in a)
 
 
 def discover_halls(debug: bool) -> dict[str, dict]:
@@ -185,7 +206,32 @@ def discover_halls(debug: bool) -> dict[str, dict]:
                 halls[name]["locId"] = q["locid"]
         missing = [k for k in halls if k not in seen]
         if missing:
-            log(f"  (not in HDH's hall list today, using the saved address: {', '.join(missing)})")
+            # Backup: if HDH changed the locDetID too, open the other hall pages it links to and match by the
+            # hall name printed on each page.
+            taken = {(v["locId"], v["locDetID"]) for k, v in halls.items() if k in seen}
+            candidates = []
+            for a in soup.find_all("a", href=True):
+                if "venue_v3" not in a["href"].lower():
+                    continue
+                q = {k.lower(): v[0] for k, v in parse_qs(urlparse(urljoin(INDEX_URL, a["href"])).query).items()}
+                key = (q.get("locid"), q.get("locdetid"))
+                if None in key or q.get("sublocnum", "00") != "00" or key in taken or key in candidates:
+                    continue
+                candidates.append(key)
+            for loc, det in candidates[:25]:
+                try:
+                    found = page_hall_name(get(VENUE_URL.format(locId=loc, locDetID=det, day=0)))
+                except Exception:
+                    continue
+                for k in list(missing):
+                    if same_hall(k, found):
+                        log(f"  {k}: found by name on HDH's page (new numbers {loc}/{det})")
+                        PROBLEMS.append(f"{k} moved to new page numbers ({loc}/{det}); found it by name. "
+                                        f"Update KNOWN_HALLS in sync_menu.py when convenient.")
+                        halls[k] = {"locId": loc, "locDetID": det}
+                        missing.remove(k)
+            if missing:
+                log(f"  (not in HDH's hall list today, using the saved address: {', '.join(missing)})")
         try:
             read_hours(soup)
         except Exception as e:
@@ -459,6 +505,11 @@ def sync_hall(name: str, ids: dict, day: int, cache: dict, debug: bool) -> dict:
     html = get(url)
     if debug:
         save_debug(f"menu-{slug(name)}.html", html)
+    page_name = page_hall_name(html)
+    if page_name and not same_hall(name, page_name):
+        PROBLEMS.append(f"{name}: HDH's page at these numbers is now \"{page_name}\", so it was skipped.")
+        log(f"  ! This page is \"{page_name}\", not {name}. Skipped so the wrong menu isn't shown.")
+        return {"name": name, "url": url, "hours": None, "venues": [], "items": []}
     items = parse_menu(html, url)
     method = "page HTML"
 
@@ -516,6 +567,8 @@ def sync_hall(name: str, ids: dict, day: int, cache: dict, debug: bool) -> dict:
         log(f"  ! {missing} items had no readable nutrition page (calories from the menu only)")
     hours = HOURS.get(ids["locId"], [])
     whole = next((v for v in hours if v["sub"] == "00"), None)
+    if not out_items and day == 0 and whole and whole["hours"] != "Closed":
+        PROBLEMS.append(f"{name} is open today ({whole['hours']}) but no menu items could be read.")
     return {"name": name, "url": url, "hours": whole["hours"] if whole else None,
             "venues": [{"name": v["name"], "hours": v["hours"]} for v in hours if v["sub"] != "00"],
             "items": out_items}
@@ -625,6 +678,13 @@ def main() -> None:
             (pub / "index.html").write_text(app.read_text(encoding="utf-8"), encoding="utf-8")
         (pub / ".nojekyll").write_text("", encoding="utf-8")   # tells GitHub Pages to serve files as-is
         log(f"  Published to {pub}/")
+
+    problems_file = OUT / "problems.txt"
+    if PROBLEMS:
+        problems_file.write_text("\n".join(PROBLEMS) + "\n", encoding="utf-8")
+        log("\nNeeds a look:\n  - " + "\n  - ".join(PROBLEMS))
+    elif problems_file.exists():
+        problems_file.unlink()
 
     log("\nDone.")
     log(f"  {total} items across {len(result['halls'])} hall(s); {full} with full nutrition facts")
