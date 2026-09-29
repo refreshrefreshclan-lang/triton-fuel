@@ -58,3 +58,14 @@ jobs:
             git commit -m "Menu update $(date +'%a %b %-d, %-I:%M %p')"
             git push
           fi
+
+      # The menu above is already saved. If the script noticed something off (a hall moved, or a hall that's
+      # open today had no readable menu), this step fails the run on purpose so GitHub emails you.
+      - name: Check for problems
+        run: |
+          if [ -s output/problems.txt ]; then
+            echo "The menu was published, but these need a look:"
+            sed 's/^/::error::/' output/problems.txt
+            exit 1
+          fi
+          echo "No problems found."
