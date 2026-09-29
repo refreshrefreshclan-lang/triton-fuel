@@ -53,17 +53,17 @@ BASE = "https://hdh-web.ucsd.edu"
 INDEX_URL = BASE + "/dining/apps/diningservices"
 VENUE_URL = BASE + "/dining/apps/diningservices/Restaurants/Venue_V3?locId={locId}&subLocNum=00&locDetID={locDetID}&dayNum={day}"
 
-# Halls we already know; anything else found on the dining index page is added.
-KNOWN_HALLS = {  # subLocNum 00 = the whole hall (every restaurant inside it)
-    "64 Degrees":    {"locId": "64", "locDetID": "37"},
-    "Bistro":        {"locId": "27", "locDetID": "27"},
-    "Canyon Vista":  {"locId": "24", "locDetID": "22"},
-    "Club Med":      {"locId": "15", "locDetID": "14"},
-    "Foodworx":      {"locId": "11", "locDetID": "13"},
-    "OceanView":     {"locId": "05", "locDetID": "8"},
-    "Pines":         {"locId": "01", "locDetID": "6"},
-    "Sixth College": {"locId": "37", "locDetID": "30"},
-    "Ventanas":      {"locId": "18", "locDetID": "52"},
+# The dining halls the app shows. Only these are ever published.
+KNOWN_HALLS = {  # locDetID identifies the hall; locId is refreshed from HDH's hall list on every run
+    "64 Degrees":    {"locId": "2", "locDetID": "37"},
+    "Bistro":        {"locId": "13", "locDetID": "27"},
+    "Canyon Vista":  {"locId": "10", "locDetID": "22"},
+    "Club Med":      {"locId": "12", "locDetID": "14"},
+    "Foodworx":      {"locId": "14", "locDetID": "13"},
+    "OceanView":     {"locId": "8", "locDetID": "8"},
+    "Pines":         {"locId": "3", "locDetID": "6"},
+    "Sixth College": {"locId": "4", "locDetID": "30"},
+    "Ventanas":      {"locId": "9", "locDetID": "52"},
 }
 SKIP_WORDS = ("market", "catering", "coffee cart", "vending")
 
@@ -156,33 +156,42 @@ def read_hours(soup) -> None:
 
 
 def discover_halls(debug: bool) -> dict[str, dict]:
+    """The nine halls, with their current page addresses.
+
+    HDH sometimes renumbers a hall's locId (it did on Sep 28, 2026), but each hall's locDetID has stayed
+    the same. So halls are matched by locDetID, and the current locId is read from HDH's hall list.
+    Links to anything that isn't one of the known halls (featured dishes, markets...) are ignored, so a
+    dish name can never show up as a dining hall.
+    """
     halls = {k: dict(v) for k, v in KNOWN_HALLS.items()}
+    by_det = {v["locDetID"]: k for k, v in halls.items()}
     try:
         html = get(INDEX_URL)
         if debug:
             save_debug("index.html", html)
         soup = BeautifulSoup(html, "html.parser")
-        try:
-            read_hours(soup)
-        except Exception as e:
-            log(f"  (couldn't read today's hours: {e})")
+        seen = set()
         for a in soup.find_all("a", href=True):
             href = a["href"]
             if "venue_v3" not in href.lower():
                 continue
             q = {k.lower(): v[0] for k, v in parse_qs(urlparse(urljoin(INDEX_URL, href)).query).items()}
-            if "locid" not in q or "locdetid" not in q or q.get("sublocnum", "00") != "00":
+            name = by_det.get(q.get("locdetid", ""))
+            if not name or "locid" not in q or q.get("sublocnum", "00") != "00" or name in seen:
                 continue
-            if any(v["locId"] == q["locid"] for v in halls.values()):
-                continue
-            name = clean(a.get_text(" ")) or clean(a.get("title", "")) or clean(a.get("aria-label", ""))
-            if not name or any(w in name.lower() for w in SKIP_WORDS):
-                continue
-            name = re.sub(r"\s*(menu|hours|view menu)\s*$", "", name, flags=re.I).strip()
-            if name and name not in halls and len(name) < 40:
-                halls[name] = {"locId": q["locid"], "locDetID": q["locdetid"]}
+            seen.add(name)
+            if halls[name]["locId"] != q["locid"]:
+                log(f"  {name}: HDH's page number changed from {halls[name]['locId']} to {q['locid']}")
+                halls[name]["locId"] = q["locid"]
+        missing = [k for k in halls if k not in seen]
+        if missing:
+            log(f"  (not in HDH's hall list today, using the saved address: {', '.join(missing)})")
+        try:
+            read_hours(soup)
+        except Exception as e:
+            log(f"  (couldn't read today's hours: {e})")
     except Exception as e:
-        log(f"  ! Couldn't read the list of dining halls ({e}); using the halls I already know.")
+        log(f"  ! Couldn't read the list of dining halls ({e}); using the saved addresses.")
     return halls
 
 
@@ -584,6 +593,8 @@ def main() -> None:
             log(f"  ! Skipped {name}: {e}")
         CACHE_FILE.write_text(json.dumps(cache))
 
+    # only the known dining halls are ever published
+    result["halls"] = [h for h in result["halls"] if h["name"] in KNOWN_HALLS]
     total = sum(len(h["items"]) for h in result["halls"])
     full = sum(1 for h in result["halls"] for it in h["items"] if it["complete"])
     if total < args.min_items or full < total * 0.8:
@@ -597,7 +608,8 @@ def main() -> None:
         try:
             prev = json.loads((Path(args.publish) / "menu.json").read_text(encoding="utf-8"))
             prev_total = sum(len(h["items"]) for h in prev.get("halls", []))
-            if prev.get("date") == result["date"] and total < prev_total * 0.7:
+            prev_ok = all(h.get("name") in KNOWN_HALLS for h in prev.get("halls", []))
+            if prev_ok and prev.get("date") == result["date"] and total < prev_total * 0.7:
                 log(f"\nKept the earlier menu for {prev['date']}: it has {prev_total} items, this run found only {total}.")
                 result, total = prev, prev_total
                 full = sum(1 for h in result["halls"] for it in h["items"] if it.get("complete", True))
