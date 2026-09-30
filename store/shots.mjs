@@ -18,6 +18,8 @@ const day = String(menu.date || menu.generated || '').slice(0, 10);
 const SIZES = [
   // App Store 6.9" (1290x2796) and Google Play phone (1080x1920)
   { name: 'ios-6.9', w: 430, h: 932, dpr: 3 },
+  // App Store 6.5" (1284x2778), for the 6.5-inch slot
+  { name: 'ios-6.5', w: 428, h: 926, dpr: 3 },
   { name: 'play-phone', w: 360, h: 640, dpr: 3 },
 ];
 
