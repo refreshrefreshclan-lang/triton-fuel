@@ -47,3 +47,15 @@ jobs:
         with:
           name: triton-fuel-store-assets
           path: docs/store
+
+      - name: Attach App Store screenshots (6.9-inch, 1290x2796)
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-store-screenshots-6.9-inch
+          path: docs/store/ios-6.9-light-*.png
+
+      - name: Attach App Store screenshots (6.5-inch, 1284x2778)
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-store-screenshots-6.5-inch
+          path: docs/store/ios-6.5-light-*.png
