@@ -1,0 +1,98 @@
+# Builds the iPhone app on one of GitHub's Macs, signs it, and uploads it to App Store Connect (TestFlight).
+# No Mac needed. Run it from the Actions tab: "Release iPhone app" > Run workflow.
+#
+# One-time setup (Settings > Secrets and variables > Actions > New repository secret):
+#   APPLE_TEAM_ID   your 10-character Team ID (developer.apple.com > Account > Membership details)
+#   ASC_KEY_ID      the Key ID of an App Store Connect API key with the Admin role
+#   ASC_ISSUER_ID   the Issuer ID shown above the list of API keys
+#   ASC_KEY_P8      the full text of the downloaded AuthKey_XXXXXXXXXX.p8 file
+# The app record must already exist in App Store Connect with the bundle ID below.
+
+name: Release iPhone app
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version shown on the App Store (keep 1.0 until the first release is approved)"
+        default: "1.0"
+        required: true
+
+jobs:
+  ios:
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      BUNDLE_ID: io.github.refreshrefreshclanlang.tritonfuel
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Check the Apple secrets are set
+        working-directory: .
+        run: |
+          missing=""
+          for v in TEAM_ID KEY_ID ISSUER_ID KEY_P8; do if [ -z "${!v}" ]; then missing="$missing $v"; fi; done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing secrets:$missing. Add APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_P8 under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Prepare the iPhone project
+        run: |
+          xcodebuild -version
+          npm install --no-audit --no-fund
+          npm run prepare-web
+          npm run assets
+          npx cap add ios
+          npx capacitor-assets generate --ios
+          node scripts/ios-tweaks.mjs
+          npx cap sync ios
+
+      - name: Build and sign
+        run: |
+          KEY="$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
+          printf '%s\n' "$KEY_P8" > "$KEY"
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
+            MARKETING_VERSION="${{ inputs.version }}" CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            archive | tail -n 60
+          test "${PIPESTATUS[0]}" = "0"
+
+      - name: Upload to App Store Connect
+        run: |
+          KEY="$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
+          cat > "$RUNNER_TEMP/export.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/export.plist" -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID" \
+            | tail -n 40
+          test "${PIPESTATUS[0]}" = "0"
+          rm -f "$KEY"
+          echo "Uploaded build ${{ inputs.version }} (${{ github.run_number }}). It appears under TestFlight in App Store Connect after Apple finishes processing (about 10-30 minutes)."
