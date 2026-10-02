@@ -48,6 +48,11 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{height:100%}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html,body{overflow-x:hidden;max-width:100%}
+/* iPhones zoom the page when a text box under 16px is tapped, so every text box is at least 16px */
+input,select,textarea{font-size:16px}
+body.sheet-open{overflow:hidden}
 body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.35;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--pro);outline-offset:2px;border-radius:10px}
@@ -145,7 +150,7 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
 .seg button[aria-pressed="true"]{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .search{display:flex;align-items:center;gap:8px;background:var(--fill);border-radius:12px;padding:9px 12px}
 .search svg{flex:none;color:var(--ink-2)}
-.search input{border:0;outline:0;background:transparent;font:inherit;color:var(--ink);width:100%;min-width:0}
+.search input{border:0;outline:0;background:transparent;font:inherit;font-size:16px;color:var(--ink);width:100%;min-width:0}
 .search input::placeholder{color:var(--ink-2)}
 .menu-item{grid-template-columns:1fr auto;align-items:center;cursor:pointer}
 .menu-item + .menu-item::before{left:16px}
@@ -224,7 +229,7 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
 /* Sheet */
 .scrim{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.32);display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .22s}
 .scrim.show{opacity:1}
-.sheet{background:var(--bg);width:100%;max-width:520px;max-height:90%;overflow:auto;border-radius:22px 22px 0 0;padding:8px 16px calc(20px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)));transform:translateY(24px);transition:transform .28s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;gap:16px}
+.sheet{background:var(--bg);width:100%;max-width:520px;max-height:90%;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border-radius:22px 22px 0 0;padding:8px 16px calc(20px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)));transform:translateY(24px);transition:transform .28s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;gap:16px}
 .scrim.show .sheet{transform:none}
 .grabber{width:36px;height:5px;border-radius:99px;background:var(--ink-3);opacity:.5;margin:2px auto 0}
 .sheet-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
@@ -260,7 +265,7 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
 .field{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:11px 16px;position:relative}
 .field + .field::before{content:"";position:absolute;top:0;left:52px;right:0;height:1px;background:var(--hair)}
 .field label{font-weight:600}
-.field input{width:92px;text-align:right;font:inherit;font-family:var(--round);font-weight:800;font-variant-numeric:tabular-nums;border:0;background:var(--fill);border-radius:8px;padding:6px 8px;color:var(--ink)}
+.field input{width:92px;text-align:right;font:inherit;font-size:16px;font-family:var(--round);font-weight:800;font-variant-numeric:tabular-nums;border:0;background:var(--fill);border-radius:8px;padding:6px 8px;color:var(--ink)}
 .field .u{font-size:13px;color:var(--ink-2);width:26px}
 
 /* Toast */
@@ -908,6 +913,7 @@ function openSheet(html, bind){
   root.innerHTML = `<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true"><div class="grabber"></div>${html}</div></div>`;
   const scrim = root.querySelector('#scrim');
   requestAnimationFrame(()=>scrim.classList.add('show'));
+  document.body.classList.add('sheet-open');   // the page behind stays still while the sheet scrolls
   scrim.addEventListener('click',e=>{ if(e.target===scrim) closeSheet(); });
   root.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeSheet);
   bind && bind(root.querySelector('.sheet'));
@@ -915,6 +921,8 @@ function openSheet(html, bind){
 }
 function closeSheet(){
   const s=root.querySelector('#scrim'); if(!s) return;
+  document.body.classList.remove('sheet-open');
+  if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
   s.classList.remove('show'); setTimeout(()=>{ root.innerHTML=''; },220);
 }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeSheet(); });
