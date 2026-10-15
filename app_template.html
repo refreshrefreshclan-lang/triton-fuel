@@ -162,7 +162,14 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
 .add{width:32px;height:32px;border-radius:50%;background:color-mix(in srgb,var(--pro) 14%,transparent);color:var(--pro);display:grid;place-items:center;flex:none;transition:transform .15s}
 .add:active{transform:scale(.9)}
 .note{font-size:12.5px;color:var(--ink-2);padding-inline:4px;line-height:1.45}
-.note a{color:var(--pro)}
+.note a,.foot a{color:var(--pro)}
+.linkish{background:none;border:0;padding:0;font:inherit;color:var(--pro);cursor:pointer;text-decoration:underline}
+.src-list{display:flex;flex-direction:column}
+.src{padding:12px 16px;position:relative}
+.src + .src::before{content:"";position:absolute;top:0;left:16px;right:0;height:1px;background:var(--hair)}
+.src .use{font-size:13px;color:var(--ink-2);margin-bottom:4px}
+.src a{font-weight:700;color:var(--pro);text-decoration:none}
+.src .by{font-size:12.5px;color:var(--ink-2);margin-top:2px}
 .data-status{display:flex;align-items:center;gap:12px;padding:12px 14px}
 .status-dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 18%,transparent)}
 .status-dot.warn{background:var(--fat);box-shadow:0 0 0 4px color-mix(in srgb,var(--fat) 20%,transparent)}
@@ -312,6 +319,10 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
       <div class="section-h"><h2>Meals</h2><span class="aside" id="meal-count"></span></div>
       <div id="meals" style="display:flex;flex-direction:column;gap:16px"></div>
     </div>
+
+    <div class="section">
+      <p class="note">Nutrition facts from UC San Diego HDH. % Daily Values from the FDA. Not medical advice. <button type="button" class="linkish" data-sources>Sources &amp; disclaimer</button></p>
+    </div>
   </section>
 
   <!-- DINING -->
@@ -422,7 +433,27 @@ const NUTRIENTS = [
 ];
 const NKEYS = ['kcal','pro','carb','fat','sat','trans','chol','na','fib','sug'];
 const DEFAULT_GOALS = {kcal:2200, pro:140, fat:73};
-const DV = {fat:78, sat:20, chol:300, na:2300, carb:275, fib:28, pro:50};
+const DV = {fat:78, sat:20, chol:300, na:2300, carb:275, fib:28, pro:50};   // FDA Daily Values (see SOURCES)
+const HDH_URL = 'https://hdh-web.ucsd.edu/dining/apps/diningservices';
+// Every nutrition fact, number and piece of guidance in the app, with where it comes from.
+const SOURCES = [
+  {use:'Menus, serving sizes, calories, nutrients and allergens for every item',
+   title:'UC San Diego HDH Dining: menus and nutrition facts', by:'UC San Diego Housing, Dining and Hospitality', url:HDH_URL},
+  {use:'% Daily Value on nutrition labels (Total fat 78 g, saturated fat 20 g, cholesterol 300 mg, sodium 2,300 mg, carbohydrate 275 g, fiber 28 g, protein 50 g)',
+   title:'Daily Value on the Nutrition and Supplement Facts Labels', by:'U.S. Food and Drug Administration', url:'https://www.fda.gov/food/nutrition-facts-label/daily-value-nutrition-and-supplement-facts-labels'},
+  {use:'2,000 calories a day as the general reference for % Daily Value',
+   title:'How to Understand and Use the Nutrition Facts Label', by:'U.S. Food and Drug Administration', url:'https://www.fda.gov/food/nutrition-facts-label/how-understand-and-use-nutrition-facts-label'},
+  {use:'Calories per gram used to work out the carbs left in your calorie goal (protein 4, carbohydrate 4, fat 9)',
+   title:'21 CFR 101.9(c)(1)(i)(B), Nutrition labeling of food', by:'U.S. Code of Federal Regulations (FDA)', url:'https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-101/subpart-A/section-101.9'},
+  {use:'Starting goals: protein (25% of calories) and fat (30% of calories) sit inside the acceptable ranges for adults (protein 10–35%, fat 20–35%, carbohydrate 45–65% of calories)',
+   title:'Dietary Reference Intakes for Energy, Carbohydrate, Fiber, Fat, Fatty Acids, Cholesterol, Protein, and Amino Acids (2005)', by:'Institute of Medicine, National Academies Press', url:'https://nap.nationalacademies.org/catalog/10490/dietary-reference-intakes-for-energy-carbohydrate-fiber-fat-fatty-acids-cholesterol-protein-and-amino-acids'},
+  {use:'Calorie needs depend on age, sex and activity; protein of about 1.2–1.6 g per kg of body weight a day',
+   title:'Dietary Guidelines for Americans, 2025–2030', by:'U.S. Department of Agriculture and U.S. Department of Health and Human Services', url:'https://www.dietaryguidelines.gov/'},
+  {use:'Plain-language summary of the 2025–2030 Dietary Guidelines',
+   title:'Dietary Guidelines for Americans 2025–2030', by:'MedlinePlus, U.S. National Library of Medicine', url:'https://medlineplus.gov/ency/article/002093.htm'},
+];
+const DISCLAIMER = 'Triton Fuel is a food log, not medical advice. Nutrition values come from UC San Diego HDH and can change, so treat them as close estimates. The starting goals are general examples for adults, not personal recommendations. Talk to a doctor or registered dietitian before changing your diet, especially if you have a health condition, are pregnant, or are under 18.';
+const extLink = (url, text) => `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(text)}</a>`;
 const MEALS = ['Breakfast','Lunch','Dinner','Late Night'];
 const PERIOD_ORDER = ['Breakfast','Brunch','Lunch','Lunch/Dinner','Dinner','Late Night','Menu'];
 const LETTER = {B:'Breakfast', L:'Lunch', D:'Dinner'};
@@ -536,7 +567,7 @@ const todayKey = () => { const d=new Date(); return d.getFullYear()+'-'+(d.getMo
 const todayISO = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
 function load(){ try{ return JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){ return null; } }
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify(state)); }catch(e){} }
-const snap = (it, hall, s, meal) => ({uid:'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), name:it.name, hall, n:{...it.n}, serving:it.serving||null, allergens:it.allergens||null, diet:it.diet||[], pageKcal:it.pageKcal??null, s, meal, placeholder:!!MENU.sample});
+const snap = (it, hall, s, meal) => ({uid:'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), name:it.name, hall, n:{...it.n}, serving:it.serving||null, allergens:it.allergens||null, diet:it.diet||[], pageKcal:it.pageKcal??null, source:it.source||null, s, meal, placeholder:!!MENU.sample});
 function realExamples(){
   if(MENU.sample) return null;
   const find = (hall, name, period) => { const h=MENU.halls.find(x=>x.name===hall); return h && h.items.find(i=>i.name===name && (!period||i.period===period)); };
@@ -866,7 +897,7 @@ function renderMenu(){
   const q = query.trim().toLowerCase();
   visible = inVenue.filter(it=>(it.period||'Menu')===menuPeriod && (!q || [it.name,it.desc,it.station,it.sub].join(' ').toLowerCase().includes(q)));
   const el = document.getElementById('menu');
-  document.getElementById('menu-note').textContent = MENU.sample ? '' : 'Nutrition facts come from each item’s UCSD HDH nutrition page. Recipes can change on the day, so treat totals as close estimates.';
+  document.getElementById('menu-note').textContent = MENU.sample ? '' : 'Nutrition facts come from each item’s UC San Diego HDH nutrition page. Recipes can change on the day, so treat totals as close estimates. Tap an item for its source.';
   if(!visible.length){ el.innerHTML = `<div class="card empty">${q?`No ${esc(menuPeriod.toLowerCase())} items match “${esc(query)}”.`:`Nothing listed for ${esc(menuPeriod.toLowerCase())}.`}</div>`; return; }
   const groupOf = it => { const [stn, rest] = (it.station||'Menu').split(' · '); const sub = it.sub || rest || '';
     return venue ? (sub || stn) : (sub ? stn+' · '+sub : stn); };
@@ -952,7 +983,7 @@ function nfLabel(it, s, placeholder){
     <div class="r ind"><span>Dietary Fiber ${g('fib','g')}</span><b>${dv('fib')}</b></div>
     <div class="r ind"><span>Total Sugars ${g('sug','g')}</span><span></span></div>
     <div class="r thick"><span><b>Protein</b> ${g('pro','g')}</span><span></span></div>
-    <div class="foot">*Percent Daily Values are based on a 2,000 calorie diet. ${foot}${kcalNote}${it.allergens?`<br><b>Contains:</b> ${esc(it.allergens)}`:''}${(it.diet||[]).length?`<br><b>Diet:</b> ${esc(it.diet.join(', '))}`:''}</div>
+    <div class="foot">*Percent Daily Values are based on a 2,000 calorie diet and the FDA’s Daily Values (${extLink(SOURCES[1].url,'FDA')}). ${foot} ${extLink(it.source||HDH_URL, it.source?'View this item on HDH':'HDH menus')} · <button type="button" class="linkish" data-sources>All sources</button>${kcalNote}${it.allergens?`<br><b>Contains:</b> ${esc(it.allergens)}`:''}${(it.diet||[]).length?`<br><b>Diet:</b> ${esc(it.diet.join(', '))}`:''}</div>
   </div>`;
 }
 
@@ -1005,11 +1036,24 @@ function itemSheet(it, entry){
   });
 }
 
+function sourcesSheet(){
+  const html = `
+    <div class="sheet-h">
+      <div><h3>Sources &amp; disclaimer</h3><p>Where every nutrition number and piece of guidance in Triton Fuel comes from.</p></div>
+      <button class="x" type="button" data-close aria-label="Close"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="card src-list">${SOURCES.map(x=>`<div class="src"><div class="use">${esc(x.use)}</div>${extLink(x.url, x.title)}<div class="by">${esc(x.by)}</div></div>`).join('')}</div>
+    <p class="note"><b>Disclaimer.</b> ${esc(DISCLAIMER)}</p>
+    <p class="note">Triton Fuel is an independent student project and isn’t affiliated with or endorsed by UC San Diego. ${extLink('https://refreshrefreshclan-lang.github.io/triton-fuel/privacy.html','Privacy policy')}</p>`;
+  openSheet(html);
+}
+document.addEventListener('click', e=>{ if(e.target.closest('[data-sources]')){ e.preventDefault(); sourcesSheet(); } });
+
 function goalsSheet(){
   const fields = [{k:'kcal',label:'Calories',unit:'kcal',color:'var(--kcal)',ic:'kc'}, ...NUTRIENTS.filter(n=>n.goal)];
   const html = `
     <div class="sheet-h">
-      <div><h3>Daily goals</h3><p>Protein and fat are your targets. Carbs have no limit: they fill the rest of your calories.</p></div>
+      <div><h3>Daily goals</h3><p>Protein and fat are your targets. Carbs have no limit: they fill the rest of your calories (protein and carbs count 4 calories per gram, fat 9).</p></div>
       <button class="x" type="button" data-close aria-label="Close"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     </div>
     <form class="card" id="goals-form">
@@ -1023,6 +1067,8 @@ function goalsSheet(){
       <button class="cta" type="button" id="save-goals">Save goals</button>
       <button class="cta ghost" type="button" id="clear-day">Clear today’s log</button>
     </div>
+    <p class="note"><b>About the starting goals.</b> 2,200 kcal, 140 g protein (25% of calories) and 73 g fat (30%) are general examples for an active adult. They fall within the National Academies’ acceptable ranges for adults (protein 10–35% and fat 20–35% of calories). The 2025–2030 Dietary Guidelines suggest about 1.2–1.6 g of protein per kg of body weight a day, and calorie needs vary with age, sex and activity. Set goals that fit you, ideally with a doctor or registered dietitian. <button type="button" class="linkish" data-sources>Sources</button></p>
+    <p class="note">${esc(DISCLAIMER)}</p>
     <p class="note">Menus and nutrition facts come from UC San Diego HDH Dining. Triton Fuel is an independent student project and isn’t affiliated with UC San Diego. Your logs stay on this device. <a href="https://refreshrefreshclan-lang.github.io/triton-fuel/privacy.html" target="_blank" rel="noopener">Privacy policy</a></p>`;
   openSheet(html, sh=>{
     sh.querySelector('#goals-form').addEventListener('submit',e=>e.preventDefault());
